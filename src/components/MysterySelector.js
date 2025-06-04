@@ -5,8 +5,8 @@ function MysterySelector({ onSelectMystery }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // URL do seu backend 
-    const HTTP_SERVER_URL = "http://localhost:5000"; 
+    const HTTP_SERVER_URL = "https://seu-backend-aqui.onrender.com"; 
+
 
     useEffect(() => {
         const fetchMysteries = async () => {
