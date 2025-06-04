@@ -1,15 +1,70 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { io } from 'socket.io-client';
 import './ChatGame.css';
 
 function ChatGame({ mysteryId, duration, onGameEnd }) {
     const [messages, setMessages] = useState([]);
     const [inputValue, setInputValue] = useState('');
-    const ws = useRef(null); 
+    const socket = useRef(null);
     const chatBoxRef = useRef(null); 
 
-    const WEBSOCKET_URL = "ws://localhost:8000"; 
+    const BACKEND_URL = "https://detetive-generativo-backend.onrender.com";
+
+    useEffect(() => {
+        socket.current = io(BACKEND_URL, {
+            transports: ['websocket', 'polling']
+        });
+
+        socket.current.on('connect', () => {
+            console.log('Socket.IO conectado ao backend.');
+            socket.current.emit('start_game', { historia_id: mysteryId, duracao: duration });
+        });
+
+        socket.current.on('disconnect', () => {
+            console.log('Socket.IO desconectado.');
+            addMessageToChat("Conexão perdida com o servidor. Recarregue a página.", "system");
+        });
+
+        socket.current.on('connect_error', (err) => {
+            console.error('Erro de conexão Socket.IO:', err);
+            addMessageToChat(`Erro de conexão com o servidor: ${err.message}.`, "system");
+        });
+
+        socket.current.on('narrator_message', (data) => {
+            console.log('Mensagem Narrador recebida:', data);
+            addMessageToChat(data.message, data.type);
+        });
+
+        socket.current.on('system_message', (data) => {
+            console.log('Mensagem Sistema recebida:', data);
+            addMessageToChat(data.message, data.type);
+        });
+
+        socket.current.on('error_message', (data) => {
+            console.error('Mensagem de Erro recebida:', data);
+            addMessageToChat(`ERRO: ${data.message}`, data.type);
+        });
+
+        socket.current.on('game_over', (data) => {
+            console.log('Game Over recebido:', data);
+            addMessageToChat(data.message, data.type);
+            setTimeout(() => onGameEnd(), 3000);
+        });
+
+        return () => {
+            if (socket.current) {
+                socket.current.disconnect();
+            }
+        };
+    }, [mysteryId, duration, onGameEnd]); 
+
+    useEffect(() => {
+        if (chatBoxRef.current) {
+            chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+        }
+    }, [messages]); 
 
     const addMessageToChat = (content, type, sender = null) => {
         const characterSpeechRegex = /\*\*(.*?):\*\* "(.*?)"/g;
@@ -71,71 +126,28 @@ function ChatGame({ mysteryId, duration, onGameEnd }) {
         setMessages(prevMessages => [...prevMessages, ...newMessages]);
     };
 
-    useEffect(() => {
-        ws.current = new WebSocket(WEBSOCKET_URL);
-
-        ws.current.onopen = () => {
-            console.log('WebSocket conectado.');
-            if (ws.current.readyState === WebSocket.OPEN) {
-                console.log('Enviando mensagem inicial para o backend...');
-                ws.current.send(JSON.stringify({ type: 'start_game', historia_id: mysteryId, duracao: duration }));
-            }
-        };
-
-        ws.current.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            console.log('Mensagem WS recebida:', data);
-            
-            addMessageToChat(data.message, data.type);
-
-            if (data.type === 'game_over') {
-                setTimeout(() => onGameEnd(), 3000);
-            }
-        };
-
-        ws.current.onclose = () => {
-            console.log('WebSocket desconectado.');
-            addMessageToChat("Conexão perdida com o servidor. Recarregue a página.", "system");
-        };
-
-        ws.current.onerror = (error) => {
-            console.error('Erro no WebSocket:', error);
-            addMessageToChat("Erro na conexão WebSocket. Verifique o console.", "system");
-        };
-
-        return () => {
-            if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-                ws.current.close();
-            }
-        };
-    }, [mysteryId, duration, onGameEnd]); 
-
-    useEffect(() => {
-        if (chatBoxRef.current) {
-            chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
-        }
-    }, [messages]); 
-
-    const sendGameMessage = (type, content) => {
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+    const sendGameAction = (eventType, content, originalType = null) => {
+        if (socket.current && socket.current.connected) {
             addMessageToChat(content, 'user'); 
-            ws.current.send(JSON.stringify({ type: type, content: content })); 
+            socket.current.emit(eventType, { content: content, type_original: originalType || eventType });
             setInputValue(''); 
+        } else {
+            console.warn('Tentativa de enviar mensagem, mas Socket.IO não está conectado.');
+            addMessageToChat("Não foi possível enviar a mensagem. Conexão com o servidor não está pronta.", "system");
         }
     };
 
     const handleTalk = () => {
         if (inputValue.trim()) {
-            sendGameMessage('user_message', `(FALO) ${inputValue.trim()}`);
+            sendGameAction('user_message', inputValue.trim(), 'talk_action');
         }
     };
 
     const handleAct = () => {
         if (inputValue.trim()) {
-            sendGameMessage('user_message', `(AJO) ${inputValue.trim()}`);
+            sendGameAction('user_message', `🔍 ${inputValue.trim()}`, 'act_action');
         }
     };
-
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && inputValue.trim()) {
             handleTalk();
@@ -143,8 +155,8 @@ function ChatGame({ mysteryId, duration, onGameEnd }) {
     };
 
     const handleEndGame = () => {
-        if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify({ type: 'end_game' }));
+        if (socket.current && socket.current.connected) {
+            socket.current.emit('end_game');
         }
         onGameEnd();
     };
