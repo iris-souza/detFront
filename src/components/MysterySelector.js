@@ -5,7 +5,7 @@ function MysterySelector({ onSelectMystery }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const HTTP_SERVER_URL = "https://seu-backend-aqui.onrender.com"; 
+    const HTTP_SERVER_URL = "https://detetive-generativo-backend.onrender.com"; 
 
 
     useEffect(() => {
