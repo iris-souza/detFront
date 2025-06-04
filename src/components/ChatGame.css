@@ -1,0 +1,227 @@
+/* ChatGame.css */
+.chat-game-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    background-color: #1a1a2e;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#chat-box {
+    overflow-y: auto;
+    padding: 20px;
+    background-color: #0f3460;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+.message {
+    padding: 15px;
+    border-radius: 12px;
+    max-width: 80%;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.message-sender {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.message-time {
+    font-size: 0.75rem;
+}
+
+.message-content {
+    line-height: 1.5;
+    font-size: 1rem;
+}
+
+.user-message {
+    align-self: flex-end;
+    background: linear-gradient(135deg, #4e54c8, #8f94fb);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.narrador-message {
+    align-self: flex-start;
+    background: linear-gradient(135deg, #162447, #1f4068);
+    color: #e6e6e6;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.narrador-message .narrador-message{
+    box-shadow: none;
+}
+
+.narrador-message strong {
+    color: #f8b500;
+    font-weight: bold;
+}
+
+.system-message {
+    align-self: center;
+    background-color: #2d4059;
+    color: #b3cde0;
+    text-align: center;
+    max-width: 90%;
+}
+
+.error-message {
+    background-color: #e43f5a;
+    color: white;
+}
+
+.game_over-message {
+    background: linear-gradient(135deg, #f83600, #f9d423);
+    color: #1a1a2e;
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.input-area {
+    padding: 15px;
+    background-color: #162447;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-input {
+    padding: 12px 15px;
+    border: none;
+    border-radius: 25px;
+    background-color: #1f4068;
+    color: #e6e6e6;
+    font-size: 1rem;
+    outline: none;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.chat-input::placeholder {
+    color: #7a8ca5;
+}
+
+.chat-input:focus {
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.3), 0 0 0 2px #4e54c8;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+.action-buttons button {
+    padding: 10px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.talk-button {
+    background: linear-gradient(135deg, #4e54c8, #8f94fb);
+    color: white;
+}
+
+.act-button {
+    background: linear-gradient(135deg, #00b09b, #96c93d);
+    color: white;
+}
+
+.contemplate-button {
+    background: linear-gradient(135deg, #654ea3, #da98b4);
+    color: white;
+}
+
+.action-buttons button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.action-buttons button:active {
+    transform: translateY(0);
+}
+
+.end-game-button {
+    padding: 12px;
+    background: linear-gradient(135deg, #e43f5a, #f37121);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.end-game-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.end-game-button:active {
+    transform: translateY(0);
+}
+
+.suggested-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed #4e54c8;
+}
+
+.suggested-actions h4 {
+    margin-bottom: 10px;
+    color: #f8b500;
+    font-size: 1rem;
+}
+
+.action-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    margin-top: 10px;
+}
+
+.action-item {
+    padding: 8px 12px;
+    background-color: rgba(78, 84, 200, 0.2);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.action-item:hover {
+    background-color: rgba(78, 84, 200, 0.4);
+    transform: translateX(5px);
+}

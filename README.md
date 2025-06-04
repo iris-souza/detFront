@@ -1,70 +1,83 @@
-# Getting Started with Create React App
+# Detetive Generativo - Frontend (React)
+Este repositório contém o código do frontend React para o jogo "Detetive Generativo". Ele é a interface do utilizador, responsável por exibir a narrativa, as opções de jogo e capturar as interações do jogador, comunicando-se em tempo real com o backend Python.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Sobre o Frontend
+O frontend é construído com:
 
-## Available Scripts
+React: Uma biblioteca JavaScript para construir interfaces de utilizador dinâmicas e reativas.
 
-In the project directory, you can run:
+HTML/CSS: Para a estrutura e estilização da aplicação, garantindo uma experiência visual imersiva e responsiva.
 
-### `npm start`
+WebSockets (API do Navegador): Para estabelecer uma comunicação bidirecional e em tempo real com o backend Python, permitindo interações fluidas com a IA.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+fetch API: Para fazer requisições HTTP ao backend (ex: para obter a lista de histórias).
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Como Colocar o Frontend Para Rodar
+Siga os passos abaixo para configurar e iniciar a aplicação frontend.
 
-### `npm test`
+1. Pré-requisitos
+Certifique-se de ter instalado:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Node.js (que inclui o npm - Node Package Manager)
 
-### `npm run build`
+Recomendado: Use a versão LTS (Long Term Support).
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. Configuração do Ambiente
+2.1. Instalar as Dependências
+Na pasta raiz do seu projeto frontend (onde se encontra o package.json), instale as dependências do Node.js:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# Navegue até a pasta do frontend
+cd frontend-react
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+# Instale as dependências
+npm install
 
-### `npm run eject`
+3. Iniciar o Servidor de Desenvolvimento do Frontend
+Com as dependências instaladas, você pode iniciar a aplicação React.
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Importante: Certifique-se de que o backend Python já está a correr (na porta 5000 para HTTP e 8000 para WebSockets), conforme as instruções no README.md do backend.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Na pasta frontend-react
+npm start
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Após executar este comando, o seu navegador deverá abrir automaticamente em http://localhost:3000 (ou outra porta disponível). A aplicação React estará a correr e tentará conectar-se ao backend.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Como o Frontend se Comunica com o Backend
+O frontend e o backend operam como aplicações separadas, comunicando-se através de APIs:
 
-## Learn More
+Requisições HTTP (API REST):
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+O frontend faz uma requisição GET para http://localhost:5000/historias (ou o endereço do seu backend) para obter a lista de mistérios disponíveis.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+WebSockets:
 
-### Code Splitting
+Após a seleção de um mistério, o frontend estabelece uma conexão WebSocket com ws://localhost:8000 (ou o endereço do seu backend).
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Todas as interações do jogo (mensagens do jogador, respostas da IA, ações como "Falar", "Agir", "Contemplar", e o término do jogo) são enviadas e recebidas através desta conexão em tempo real.
 
-### Analyzing the Bundle Size
+Resolução de Problemas Comuns
+Failed to execute 'send' on 'WebSocket': Still in CONNECTING state.:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Isso significa que o frontend tentou enviar uma mensagem antes que a conexão WebSocket estivesse totalmente estabelecida. O código já possui uma verificação para isso. Se persistir, pode indicar um problema de rede ou que o servidor WebSocket do backend não está a responder.
 
-### Making a Progressive Web App
+WebSocket desconectado. ou Conexão perdida com o servidor.:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Verifique se o backend Python está a correr e a ouvir nas portas corretas (5000 para HTTP, 8000 para WebSocket).
 
-### Advanced Configuration
+Pode ser um problema de firewall ou antivírus a bloquear a porta 8000.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+Certifique-se de que o URL do WebSocket no ChatGame.js (ws://localhost:8000) está correto.
 
-### Deployment
+Erros no console do navegador (F12):
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Uncaught (in promise) Error: A listener indicated an asynchronous response...: Este é geralmente um erro de alguma extensão do navegador e não do seu código. Pode ignorá-lo ou tentar desativar as extensões para limpar o console.
 
-### `npm run build` fails to minify
+Outros erros JavaScript podem indicar problemas na lógica do frontend. Verifique a linha e o ficheiro indicados no erro.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+A interface não carrega ou mostra erros:
+
+Verifique se todas as dependências foram instaladas (npm install).
+
+Certifique-se de que o servidor de desenvolvimento React está a correr (npm start).
+
+Tente um "hard refresh" no navegador (Ctrl+Shift+R ou Cmd+Shift+R) ou limpe o cache do site nas ferramentas de desenvolvedor.
