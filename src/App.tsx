@@ -7,8 +7,8 @@ import ChatInterface from './components/ChatInterface';
 import RankingModal from './components/RankingModal';
 import { User, Historia, Message, GameState } from './types';
 
-const HTTP_BACKEND_URL = 'http://localhost:5000';
-const WS_BACKEND_URL = 'ws://localhost:8000';
+const HTTP_BACKEND_URL = '/api';
+const WS_BACKEND_URL = '/api';
 
 function App() {
   const [socket, setSocket] = useState<Socket | null>(null);
