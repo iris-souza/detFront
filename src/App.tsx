@@ -7,6 +7,31 @@ import ChatInterface from './components/ChatInterface';
 import RankingModal from './components/RankingModal';
 import { User, Historia, Message, GameState } from './types';
 
+// Mock data for development when backend is not available
+const MOCK_HISTORIAS: Historia[] = [
+  {
+    id: '1',
+    titulo: 'O Mistério da Mansão Abandonada',
+    descricao: 'Uma antiga mansão esconde segredos sombrios. Investigue os mistérios que rondam esta propriedade abandonada.',
+    dificuldade: 'Médio',
+    tempo_estimado: '30-45 min'
+  },
+  {
+    id: '2',
+    titulo: 'O Caso do Diamante Desaparecido',
+    descricao: 'Um valioso diamante foi roubado do museu. Use suas habilidades de detetive para descobrir o culpado.',
+    dificuldade: 'Fácil',
+    tempo_estimado: '20-30 min'
+  },
+  {
+    id: '3',
+    titulo: 'Assassinato no Expresso Noturno',
+    descricao: 'Um crime foi cometido durante uma viagem de trem. Interrogue os passageiros e descubra a verdade.',
+    dificuldade: 'Difícil',
+    tempo_estimado: '45-60 min'
+  }
+];
+
 const HTTP_BACKEND_URL = '/api';
 const WS_BACKEND_URL = '/api';
 
@@ -21,94 +46,130 @@ function App() {
   const [gameState, setGameState] = useState<GameState>('menu');
   const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [backendAvailable, setBackendAvailable] = useState(false);
 
-  // Initialize socket connection
+  // Check if backend is available
+  const checkBackendAvailability = async () => {
+    try {
+      const response = await fetch(`${HTTP_BACKEND_URL}/historias`, {
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      if (response.ok) {
+        setBackendAvailable(true);
+        return true;
+      }
+    } catch (error) {
+      console.log('Backend not available, using mock data');
+      setBackendAvailable(false);
+    }
+    return false;
+  };
+
+  // Initialize socket connection only if backend is available
   useEffect(() => {
-    console.log('Connecting to backend:', WS_BACKEND_URL);
-    const newSocket = io(WS_BACKEND_URL, {
-      transports: ['websocket', 'polling'],
-      timeout: 20000,
-      forceNew: true
-    });
-    setSocket(newSocket);
+    const initializeSocket = async () => {
+      const isBackendAvailable = await checkBackendAvailability();
+      
+      if (!isBackendAvailable) {
+        console.log('Backend not available, skipping socket connection');
+        return;
+      }
 
-    newSocket.on('connect', () => {
-      console.log('Connected to server');
-      setIsConnected(true);
-    });
+      console.log('Connecting to backend:', WS_BACKEND_URL);
+      const newSocket = io(WS_BACKEND_URL, {
+        transports: ['websocket', 'polling'],
+        timeout: 20000,
+        forceNew: true
+      });
+      setSocket(newSocket);
 
-    newSocket.on('disconnect', (reason) => {
-      console.log('Disconnected from server:', reason);
-      setIsConnected(false);
-    });
+      newSocket.on('connect', () => {
+        console.log('Connected to server');
+        setIsConnected(true);
+      });
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Connection error:', error);
-      setIsConnected(false);
-    });
+      newSocket.on('disconnect', (reason) => {
+        console.log('Disconnected from server:', reason);
+        setIsConnected(false);
+      });
 
-    newSocket.on('system_message', (data) => {
-      console.log('System message received:', data);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'system',
-        content: data.message,
-        timestamp: new Date()
-      }]);
-    });
+      newSocket.on('connect_error', (error) => {
+        console.error('Connection error:', error);
+        setIsConnected(false);
+      });
 
-    newSocket.on('narrator_message', (data) => {
-      console.log('Narrator message received:', data);
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'narrator',
-        content: data.message,
-        timestamp: new Date(),
-        options: data.options
-      }]);
-    });
+      newSocket.on('system_message', (data) => {
+        console.log('System message received:', data);
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'system',
+          content: data.message,
+          timestamp: new Date()
+        }]);
+      });
 
-    newSocket.on('error_message', (data) => {
-      console.log('Error message received:', data);
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'error',
-        content: data.message,
-        timestamp: new Date()
-      }]);
-    });
+      newSocket.on('narrator_message', (data) => {
+        console.log('Narrator message received:', data);
+        setIsTyping(false);
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'narrator',
+          content: data.message,
+          timestamp: new Date(),
+          options: data.options
+        }]);
+      });
 
-    newSocket.on('game_over', (data) => {
-      console.log('Game over received:', data);
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'game_over',
-        content: data.message,
-        timestamp: new Date()
-      }]);
-      setTimeout(() => {
-        setGameState('menu');
-        setMessages([]);
-      }, 3000);
-    });
+      newSocket.on('error_message', (data) => {
+        console.log('Error message received:', data);
+        setIsTyping(false);
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'error',
+          content: data.message,
+          timestamp: new Date()
+        }]);
+      });
 
-    newSocket.on('user_authenticated', (data) => {
-      console.log('User authenticated:', data);
-      setUser({ id: data.user_id, username: data.username });
-    });
+      newSocket.on('game_over', (data) => {
+        console.log('Game over received:', data);
+        setIsTyping(false);
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'game_over',
+          content: data.message,
+          timestamp: new Date()
+        }]);
+        setTimeout(() => {
+          setGameState('menu');
+          setMessages([]);
+        }, 3000);
+      });
+
+      newSocket.on('user_authenticated', (data) => {
+        console.log('User authenticated:', data);
+        setUser({ id: data.user_id, username: data.username });
+      });
+    };
+
+    initializeSocket();
 
     return () => {
-      console.log('Cleaning up socket connection');
-      newSocket.close();
+      if (socket) {
+        console.log('Cleaning up socket connection');
+        socket.close();
+      }
     };
   }, []);
 
   // Check user authentication status
   useEffect(() => {
     const checkAuthStatus = async () => {
+      if (!backendAvailable) {
+        console.log('Backend not available, skipping auth check');
+        return;
+      }
+
       try {
         console.log('Checking auth status...');
         const response = await fetch(`${HTTP_BACKEND_URL}/user_status`, {
@@ -124,28 +185,55 @@ function App() {
       }
     };
 
-    checkAuthStatus();
-  }, []);
+    if (backendAvailable) {
+      checkAuthStatus();
+    }
+  }, [backendAvailable]);
 
   // Load available stories
   useEffect(() => {
     const loadHistorias = async () => {
       try {
-        console.log('Loading historias...');
+        if (!backendAvailable) {
+          console.log('Using mock historias data');
+          setHistorias(MOCK_HISTORIAS);
+          return;
+        }
+
+        console.log('Loading historias from backend...');
         const response = await fetch(`${HTTP_BACKEND_URL}/historias`);
-        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const text = await response.text();
+        if (!text) {
+          throw new Error('Empty response from server');
+        }
+        
+        const data = JSON.parse(text);
         console.log('Historias loaded:', data);
         setHistorias(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error loading stories:', error);
-        setHistorias([]);
+        console.log('Falling back to mock data');
+        setHistorias(MOCK_HISTORIAS);
       }
     };
 
     loadHistorias();
-  }, []);
+  }, [backendAvailable]);
 
   const handleLogin = async (username: string, password: string) => {
+    if (!backendAvailable) {
+      // Mock login for development
+      console.log('Mock login for:', username);
+      setUser({ id: '1', username });
+      setShowAuthModal(false);
+      return { success: true };
+    }
+
     try {
       console.log('Attempting login for:', username);
       const response = await fetch(`${HTTP_BACKEND_URL}/login`, {
@@ -174,6 +262,14 @@ function App() {
   };
 
   const handleRegister = async (username: string, password: string) => {
+    if (!backendAvailable) {
+      // Mock registration for development
+      console.log('Mock registration for:', username);
+      setUser({ id: '1', username });
+      setShowAuthModal(false);
+      return { success: true };
+    }
+
     try {
       console.log('Attempting registration for:', username);
       const response = await fetch(`${HTTP_BACKEND_URL}/register`, {
@@ -202,10 +298,12 @@ function App() {
   const handleLogout = async () => {
     try {
       console.log('Logging out...');
-      await fetch(`${HTTP_BACKEND_URL}/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
+      if (backendAvailable) {
+        await fetch(`${HTTP_BACKEND_URL}/logout`, {
+          method: 'POST',
+          credentials: 'include'
+        });
+      }
       setUser(null);
       setGameState('menu');
       setMessages([]);
@@ -217,6 +315,32 @@ function App() {
   const startGame = (historiaId: string, duracao: string) => {
     console.log('Starting game:', { historiaId, duracao, user, socket: !!socket });
     
+    if (!user) {
+      console.log('User not logged in, showing auth modal');
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (!backendAvailable) {
+      // Mock game start for development
+      console.log('Starting mock game');
+      setSelectedHistoria(historiaId);
+      setGameState('playing');
+      setMessages([{
+        id: Date.now().toString(),
+        type: 'system',
+        content: 'Bem-vindo ao jogo! (Modo de demonstração - backend não disponível)',
+        timestamp: new Date()
+      }, {
+        id: (Date.now() + 1).toString(),
+        type: 'narrator',
+        content: 'Você se encontra diante de um mistério intrigante. O que deseja fazer?',
+        timestamp: new Date(),
+        options: ['Investigar', 'Procurar pistas', 'Falar com testemunhas']
+      }]);
+      return;
+    }
+    
     if (!socket || !isConnected) {
       console.error('Socket not connected');
       setMessages(prev => [...prev, {
@@ -225,12 +349,6 @@ function App() {
         content: 'Não foi possível conectar ao servidor. Tente novamente.',
         timestamp: new Date()
       }]);
-      return;
-    }
-
-    if (!user) {
-      console.log('User not logged in, showing auth modal');
-      setShowAuthModal(true);
       return;
     }
 
@@ -247,11 +365,6 @@ function App() {
   };
 
   const sendMessage = (content: string, type: 'user_message' | 'contemplate_action' = 'user_message') => {
-    if (!socket || !isConnected) {
-      console.error('Socket not connected');
-      return;
-    }
-
     if (!content.trim()) {
       console.warn('Empty message');
       return;
@@ -267,6 +380,26 @@ function App() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+
+    if (!backendAvailable) {
+      // Mock response for development
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          type: 'narrator',
+          content: `Interessante observação sobre "${content.trim()}". Continue investigando para descobrir mais pistas.`,
+          timestamp: new Date(),
+          options: ['Continuar investigação', 'Examinar evidências', 'Fazer nova pergunta']
+        }]);
+      }, 1000);
+      return;
+    }
+
+    if (!socket || !isConnected) {
+      console.error('Socket not connected');
+      return;
+    }
+
     setIsTyping(true);
 
     socket.emit('user_message', {
@@ -295,12 +428,20 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-detective-900 to-detective-800 text-white">
       <Header 
         user={user}
-        isConnected={isConnected}
+        isConnected={backendAvailable ? isConnected : true}
         onLogin={() => setShowAuthModal(true)}
         onLogout={handleLogout}
       />
 
       <main className="container mx-auto px-4 py-8">
+        {!backendAvailable && (
+          <div className="mb-4 p-4 bg-yellow-600 bg-opacity-20 border border-yellow-500 rounded-lg">
+            <p className="text-yellow-200">
+              ⚠️ Modo de demonstração: Backend não disponível. Algumas funcionalidades podem estar limitadas.
+            </p>
+          </div>
+        )}
+        
         {gameState === 'menu' ? (
           <StorySelector
             historias={historias}
