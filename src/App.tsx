@@ -242,7 +242,16 @@ function App() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        // Server returned non-JSON response (likely HTML error page)
+        console.error('Server returned non-JSON response:', jsonError);
+        setBackendAvailable(false);
+        return { success: false, error: 'Servidor indisponível. Tente novamente mais tarde.' };
+      }
+
       console.log('Login response:', data);
       
       if (response.ok) {
@@ -254,7 +263,9 @@ function App() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      return { success: false, error: 'Erro de conexão' };
+      // Network error - backend is not available
+      setBackendAvailable(false);
+      return { success: false, error: 'Não foi possível conectar ao servidor. Verifique sua conexão.' };
     }
   };
 
@@ -277,7 +288,16 @@ function App() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        // Server returned non-JSON response (likely HTML error page)
+        console.error('Server returned non-JSON response:', jsonError);
+        setBackendAvailable(false);
+        return { success: false, error: 'Servidor indisponível. Tente novamente mais tarde.' };
+      }
+
       console.log('Registration response:', data);
       
       if (response.ok) {
@@ -288,7 +308,9 @@ function App() {
       }
     } catch (error) {
       console.error('Registration error:', error);
-      return { success: false, error: 'Erro de conexão' };
+      // Network error - backend is not available
+      setBackendAvailable(false);
+      return { success: false, error: 'Não foi possível conectar ao servidor. Verifique sua conexão.' };
     }
   };
 
