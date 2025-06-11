@@ -7,7 +7,8 @@ import ChatInterface from './components/ChatInterface';
 import RankingModal from './components/RankingModal';
 import { User, Historia, Message, GameState } from './types';
 
-const BACKEND_URL = 'https://detetive-generativo-backend.onrender.com';
+const HTTP_BACKEND_URL = 'http://localhost:5000';
+const WS_BACKEND_URL = 'ws://localhost:8000';
 
 function App() {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -23,8 +24,8 @@ function App() {
 
   // Initialize socket connection
   useEffect(() => {
-    console.log('Connecting to backend:', BACKEND_URL);
-    const newSocket = io(BACKEND_URL, {
+    console.log('Connecting to backend:', WS_BACKEND_URL);
+    const newSocket = io(WS_BACKEND_URL, {
       transports: ['websocket', 'polling'],
       timeout: 20000,
       forceNew: true
@@ -110,7 +111,7 @@ function App() {
     const checkAuthStatus = async () => {
       try {
         console.log('Checking auth status...');
-        const response = await fetch(`${BACKEND_URL}/user_status`, {
+        const response = await fetch(`${HTTP_BACKEND_URL}/user_status`, {
           credentials: 'include'
         });
         const data = await response.json();
@@ -131,7 +132,7 @@ function App() {
     const loadHistorias = async () => {
       try {
         console.log('Loading historias...');
-        const response = await fetch(`${BACKEND_URL}/historias`);
+        const response = await fetch(`${HTTP_BACKEND_URL}/historias`);
         const data = await response.json();
         console.log('Historias loaded:', data);
         setHistorias(Array.isArray(data) ? data : []);
@@ -147,7 +148,7 @@ function App() {
   const handleLogin = async (username: string, password: string) => {
     try {
       console.log('Attempting login for:', username);
-      const response = await fetch(`${BACKEND_URL}/login`, {
+      const response = await fetch(`${HTTP_BACKEND_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,7 +176,7 @@ function App() {
   const handleRegister = async (username: string, password: string) => {
     try {
       console.log('Attempting registration for:', username);
-      const response = await fetch(`${BACKEND_URL}/register`, {
+      const response = await fetch(`${HTTP_BACKEND_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -201,7 +202,7 @@ function App() {
   const handleLogout = async () => {
     try {
       console.log('Logging out...');
-      await fetch(`${BACKEND_URL}/logout`, {
+      await fetch(`${HTTP_BACKEND_URL}/logout`, {
         method: 'POST',
         credentials: 'include'
       });
@@ -328,7 +329,7 @@ function App() {
       {showRankingModal && (
         <RankingModal
           historiaId={selectedHistoria}
-          backendUrl={BACKEND_URL}
+          backendUrl={HTTP_BACKEND_URL}
           onClose={() => setShowRankingModal(false)}
         />
       )}
