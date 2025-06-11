@@ -12,23 +12,20 @@ const MOCK_HISTORIAS: Historia[] = [
   {
     id: '1',
     titulo: 'O Mistério da Mansão Abandonada',
-    descricao: 'Uma antiga mansão esconde segredos sombrios. Investigue os mistérios que rondam esta propriedade abandonada.',
-    dificuldade: 'Médio',
-    tempo_estimado: '30-45 min'
+    resumo: 'Uma antiga mansão esconde segredos sombrios. Investigue os mistérios que rondam esta propriedade abandonada.',
+    duracoes: ['curta', 'media', 'longa']
   },
   {
     id: '2',
     titulo: 'O Caso do Diamante Desaparecido',
-    descricao: 'Um valioso diamante foi roubado do museu. Use suas habilidades de detetive para descobrir o culpado.',
-    dificuldade: 'Fácil',
-    tempo_estimado: '20-30 min'
+    resumo: 'Um valioso diamante foi roubado do museu. Use suas habilidades de detetive para descobrir o culpado.',
+    duracoes: ['curta', 'media', 'longa']
   },
   {
     id: '3',
     titulo: 'Assassinato no Expresso Noturno',
-    descricao: 'Um crime foi cometido durante uma viagem de trem. Interrogue os passageiros e descubra a verdade.',
-    dificuldade: 'Difícil',
-    tempo_estimado: '45-60 min'
+    resumo: 'Um crime foi cometido durante uma viagem de trem. Interrogue os passageiros e descubra a verdade.',
+    duracoes: ['curta', 'media', 'longa']
   }
 ];
 
@@ -336,7 +333,11 @@ function App() {
         type: 'narrator',
         content: 'Você se encontra diante de um mistério intrigante. O que deseja fazer?',
         timestamp: new Date(),
-        options: ['Investigar', 'Procurar pistas', 'Falar com testemunhas']
+        options: [
+          { texto: 'Investigar', comando: 'investigar' },
+          { texto: 'Procurar pistas', comando: 'procurar_pistas' },
+          { texto: 'Falar com testemunhas', comando: 'falar_testemunhas' }
+        ]
       }]);
       return;
     }
@@ -389,7 +390,11 @@ function App() {
           type: 'narrator',
           content: `Interessante observação sobre "${content.trim()}". Continue investigando para descobrir mais pistas.`,
           timestamp: new Date(),
-          options: ['Continuar investigação', 'Examinar evidências', 'Fazer nova pergunta']
+          options: [
+            { texto: 'Continuar investigação', comando: 'continuar' },
+            { texto: 'Examinar evidências', comando: 'examinar' },
+            { texto: 'Fazer nova pergunta', comando: 'perguntar' }
+          ]
         }]);
       }, 1000);
       return;
