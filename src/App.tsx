@@ -226,7 +226,7 @@ function App() {
     if (!backendAvailable) {
       // Mock login for development
       console.log('Mock login for:', username);
-      setUser({ id: '1', username });
+      setUser({ id: 1, username });
       setShowAuthModal(false);
       return { success: true };
     }
@@ -262,7 +262,7 @@ function App() {
     if (!backendAvailable) {
       // Mock registration for development
       console.log('Mock registration for:', username);
-      setUser({ id: '1', username });
+      setUser({ id: 1, username });
       setShowAuthModal(false);
       return { success: true };
     }
