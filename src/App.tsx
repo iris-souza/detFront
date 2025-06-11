@@ -23,7 +23,12 @@ function App() {
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(BACKEND_URL);
+    console.log('Connecting to backend:', BACKEND_URL);
+    const newSocket = io(BACKEND_URL, {
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true
+    });
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -31,12 +36,18 @@ function App() {
       setIsConnected(true);
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
+    newSocket.on('disconnect', (reason) => {
+      console.log('Disconnected from server:', reason);
+      setIsConnected(false);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Connection error:', error);
       setIsConnected(false);
     });
 
     newSocket.on('system_message', (data) => {
+      console.log('System message received:', data);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
         type: 'system',
@@ -46,6 +57,7 @@ function App() {
     });
 
     newSocket.on('narrator_message', (data) => {
+      console.log('Narrator message received:', data);
       setIsTyping(false);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
@@ -57,6 +69,7 @@ function App() {
     });
 
     newSocket.on('error_message', (data) => {
+      console.log('Error message received:', data);
       setIsTyping(false);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
@@ -67,6 +80,7 @@ function App() {
     });
 
     newSocket.on('game_over', (data) => {
+      console.log('Game over received:', data);
       setIsTyping(false);
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
@@ -74,14 +88,19 @@ function App() {
         content: data.message,
         timestamp: new Date()
       }]);
-      setGameState('menu');
+      setTimeout(() => {
+        setGameState('menu');
+        setMessages([]);
+      }, 3000);
     });
 
     newSocket.on('user_authenticated', (data) => {
+      console.log('User authenticated:', data);
       setUser({ id: data.user_id, username: data.username });
     });
 
     return () => {
+      console.log('Cleaning up socket connection');
       newSocket.close();
     };
   }, []);
@@ -90,10 +109,12 @@ function App() {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        console.log('Checking auth status...');
         const response = await fetch(`${BACKEND_URL}/user_status`, {
           credentials: 'include'
         });
         const data = await response.json();
+        console.log('Auth status response:', data);
         if (data.is_authenticated) {
           setUser({ id: data.user_id, username: data.username });
         }
@@ -109,11 +130,14 @@ function App() {
   useEffect(() => {
     const loadHistorias = async () => {
       try {
+        console.log('Loading historias...');
         const response = await fetch(`${BACKEND_URL}/historias`);
         const data = await response.json();
-        setHistorias(data);
+        console.log('Historias loaded:', data);
+        setHistorias(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error('Error loading stories:', error);
+        setHistorias([]);
       }
     };
 
@@ -122,6 +146,7 @@ function App() {
 
   const handleLogin = async (username: string, password: string) => {
     try {
+      console.log('Attempting login for:', username);
       const response = await fetch(`${BACKEND_URL}/login`, {
         method: 'POST',
         headers: {
@@ -132,20 +157,24 @@ function App() {
       });
 
       const data = await response.json();
+      console.log('Login response:', data);
+      
       if (response.ok) {
         setUser({ id: data.user_id, username: data.username });
         setShowAuthModal(false);
         return { success: true };
       } else {
-        return { success: false, error: data.message };
+        return { success: false, error: data.message || 'Erro no login' };
       }
     } catch (error) {
+      console.error('Login error:', error);
       return { success: false, error: 'Erro de conexão' };
     }
   };
 
   const handleRegister = async (username: string, password: string) => {
     try {
+      console.log('Attempting registration for:', username);
       const response = await fetch(`${BACKEND_URL}/register`, {
         method: 'POST',
         headers: {
@@ -155,19 +184,23 @@ function App() {
       });
 
       const data = await response.json();
+      console.log('Registration response:', data);
+      
       if (response.ok) {
         // After successful registration, automatically login
         return await handleLogin(username, password);
       } else {
-        return { success: false, error: data.message };
+        return { success: false, error: data.message || 'Erro no registro' };
       }
     } catch (error) {
+      console.error('Registration error:', error);
       return { success: false, error: 'Erro de conexão' };
     }
   };
 
   const handleLogout = async () => {
     try {
+      console.log('Logging out...');
       await fetch(`${BACKEND_URL}/logout`, {
         method: 'POST',
         credentials: 'include'
@@ -181,7 +214,21 @@ function App() {
   };
 
   const startGame = (historiaId: string, duracao: string) => {
-    if (!socket || !user) {
+    console.log('Starting game:', { historiaId, duracao, user, socket: !!socket });
+    
+    if (!socket || !isConnected) {
+      console.error('Socket not connected');
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        type: 'error',
+        content: 'Não foi possível conectar ao servidor. Tente novamente.',
+        timestamp: new Date()
+      }]);
+      return;
+    }
+
+    if (!user) {
+      console.log('User not logged in, showing auth modal');
       setShowAuthModal(true);
       return;
     }
@@ -191,6 +238,7 @@ function App() {
     setMessages([]);
     setIsTyping(true);
 
+    console.log('Emitting start_game event');
     socket.emit('start_game', {
       historia_id: historiaId,
       duracao: duracao
@@ -198,7 +246,17 @@ function App() {
   };
 
   const sendMessage = (content: string, type: 'user_message' | 'contemplate_action' = 'user_message') => {
-    if (!socket || !content.trim()) return;
+    if (!socket || !isConnected) {
+      console.error('Socket not connected');
+      return;
+    }
+
+    if (!content.trim()) {
+      console.warn('Empty message');
+      return;
+    }
+
+    console.log('Sending message:', { content, type });
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -217,14 +275,17 @@ function App() {
   };
 
   const endGame = () => {
-    if (!socket) return;
-    
-    socket.emit('end_game');
+    console.log('Ending game');
+    if (socket && isConnected) {
+      socket.emit('end_game');
+    }
     setGameState('menu');
     setMessages([]);
+    setIsTyping(false);
   };
 
   const showRanking = (historiaId: string) => {
+    console.log('Showing ranking for:', historiaId);
     setSelectedHistoria(historiaId);
     setShowRankingModal(true);
   };
