@@ -29,8 +29,7 @@ const MOCK_HISTORIAS: Historia[] = [
   }
 ];
 
-const HTTP_BACKEND_URL = '/api';
-const WS_BACKEND_URL = '/api';
+const BACKEND_URL = 'https://detetive-generativo-backend.onrender.com';
 
 function App() {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -48,8 +47,8 @@ function App() {
   // Check if backend is available
   const checkBackendAvailability = async () => {
     try {
-      const response = await fetch(`${HTTP_BACKEND_URL}/historias`, {
-        signal: AbortSignal.timeout(5000) // 5 second timeout
+      const response = await fetch(`${BACKEND_URL}/historias`, {
+        signal: AbortSignal.timeout(10000) // 10 second timeout
       });
       if (response.ok) {
         setBackendAvailable(true);
@@ -72,8 +71,8 @@ function App() {
         return;
       }
 
-      console.log('Connecting to backend:', WS_BACKEND_URL);
-      const newSocket = io(WS_BACKEND_URL, {
+      console.log('Connecting to backend:', BACKEND_URL);
+      const newSocket = io(BACKEND_URL, {
         transports: ['websocket', 'polling'],
         timeout: 20000,
         forceNew: true
@@ -169,7 +168,7 @@ function App() {
 
       try {
         console.log('Checking auth status...');
-        const response = await fetch(`${HTTP_BACKEND_URL}/user_status`, {
+        const response = await fetch(`${BACKEND_URL}/user_status`, {
           credentials: 'include'
         });
         const data = await response.json();
@@ -198,7 +197,7 @@ function App() {
         }
 
         console.log('Loading historias from backend...');
-        const response = await fetch(`${HTTP_BACKEND_URL}/historias`);
+        const response = await fetch(`${BACKEND_URL}/historias`);
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -216,6 +215,7 @@ function App() {
         console.error('Error loading stories:', error);
         console.log('Falling back to mock data');
         setHistorias(MOCK_HISTORIAS);
+        setBackendAvailable(false);
       }
     };
 
@@ -233,7 +233,7 @@ function App() {
 
     try {
       console.log('Attempting login for:', username);
-      const response = await fetch(`${HTTP_BACKEND_URL}/login`, {
+      const response = await fetch(`${BACKEND_URL}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ function App() {
 
     try {
       console.log('Attempting registration for:', username);
-      const response = await fetch(`${HTTP_BACKEND_URL}/register`, {
+      const response = await fetch(`${BACKEND_URL}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -296,7 +296,7 @@ function App() {
     try {
       console.log('Logging out...');
       if (backendAvailable) {
-        await fetch(`${HTTP_BACKEND_URL}/logout`, {
+        await fetch(`${BACKEND_URL}/logout`, {
           method: 'POST',
           credentials: 'include'
         });
@@ -475,7 +475,7 @@ function App() {
       {showRankingModal && (
         <RankingModal
           historiaId={selectedHistoria}
-          backendUrl={HTTP_BACKEND_URL}
+          backendUrl={BACKEND_URL}
           onClose={() => setShowRankingModal(false)}
         />
       )}
